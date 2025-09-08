@@ -1,8 +1,11 @@
+from typing import Callable
+
 from server.config import config
 from server.matchmaker import PopTimer
+from server.matchmaker.matchmaker_queue import MatchmakerQueue
 
 
-def test_queue_time_until_next_pop(queue_factory):
+def test_queue_time_until_next_pop(queue_factory: Callable[..., MatchmakerQueue]):
     team_size = 2
     t1 = PopTimer(queue_factory(team_size=team_size))
     t2 = PopTimer(queue_factory(team_size=team_size))
@@ -29,7 +32,7 @@ def test_queue_time_until_next_pop(queue_factory):
     assert t2.time_until_next_pop(0, 0) == config.QUEUE_POP_TIME_MAX
 
 
-def test_queue_pop_time_moving_average_size(queue_factory):
+def test_queue_pop_time_moving_average_size(queue_factory: Callable[..., MatchmakerQueue]):
     t1 = PopTimer(queue_factory())
 
     for _ in range(100):
@@ -43,3 +46,14 @@ def test_queue_pop_time_moving_average_size(queue_factory):
 
     # The rate should be extremely low, meaning the pop time should be high
     assert t1.time_until_next_pop(0, 100) == config.QUEUE_POP_TIME_MAX
+
+    # Test perfect number of players joining has a stable pop time
+    team_size = 2
+    desired_players = team_size * config.QUEUE_POP_DESIRED_MATCHES
+    t2 = PopTimer(queue_factory(team_size=2))
+    initial_time_to_pop = (config.QUEUE_POP_TIME_MAX + config.QUEUE_POP_TIME_MIN) / 2  # Arbitrary time between min and max
+    next_time_to_pop = initial_time_to_pop
+    for _ in range(100):
+        next_time_to_pop = t2.time_until_next_pop(desired_players, next_time_to_pop)
+
+    assert t2.time_until_next_pop(desired_players, next_time_to_pop) == next_time_to_pop  # Perfect size should not change the next time

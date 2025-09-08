@@ -25,3 +25,4 @@ develop_venv/
 logs/
 *.bak
 *.iml
+*.vscode

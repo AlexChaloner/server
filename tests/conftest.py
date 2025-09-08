@@ -10,6 +10,7 @@ import asyncio
 import gc
 import logging
 from contextlib import asynccontextmanager, contextmanager
+from typing import Callable
 from unittest import mock
 
 import hypothesis
@@ -370,7 +371,7 @@ async def geoip_service() -> GeoIpService:
 
 
 @pytest.fixture(scope="session")
-def queue_factory():
+def queue_factory() -> Callable[..., MatchmakerQueue]:
     queue_id = 0
 
     def make(
